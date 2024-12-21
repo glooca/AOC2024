@@ -23,7 +23,7 @@ impl Equation {
         Some(Self { test_value, values })
     }
 
-    fn is_possible(&self, operators: &[fn(usize, usize) -> Option<usize>]) -> bool {
+    fn is_possible(&self, operators: &[fn(usize, usize) -> usize]) -> bool {
         let mut values = self.values.iter();
         let Some(&first) = values.next() else {
             return false;
@@ -32,7 +32,7 @@ impl Equation {
         for &value in values {
             solutions = operators
                 .iter()
-                .flat_map(|op| solutions.iter().flat_map(|&v| op(v, value)))
+                .flat_map(|op| solutions.iter().map(|&v| op(v, value)))
                 .filter(|&v| v <= self.test_value)
                 .collect();
             if solutions.contains(&self.test_value) {
@@ -43,21 +43,32 @@ impl Equation {
     }
 }
 
-fn concatenate(a: usize, b: usize) -> Option<usize> {
+#[inline]
+fn add(a: usize, b: usize) -> usize {
+    a + b
+}
+
+#[inline]
+fn multiply(a: usize, b: usize) -> usize {
+    a * b
+}
+
+#[inline]
+fn concatenate(a: usize, b: usize) -> usize {
     let mut digits = 0;
     let mut temp = b;
     while temp > 0 {
         digits += 1;
         temp /= 10;
     }
-    Some(a * 10_usize.pow(digits) + b)
+    a * 10_usize.pow(digits) + b
 }
 
 fn part1(input: &'static str) -> usize {
     input
         .lines()
         .flat_map(Equation::parse)
-        .filter(|e| e.is_possible(&[usize::checked_add, usize::checked_mul]))
+        .filter(|e| e.is_possible(&[add, multiply]))
         .map(|e| e.test_value)
         .sum()
 }
@@ -66,7 +77,7 @@ fn part2(input: &'static str) -> usize {
     input
         .lines()
         .flat_map(Equation::parse)
-        .filter(|e| e.is_possible(&[usize::checked_add, usize::checked_mul, concatenate]))
+        .filter(|e| e.is_possible(&[add, multiply, concatenate]))
         .map(|e| e.test_value)
         .sum()
 }
